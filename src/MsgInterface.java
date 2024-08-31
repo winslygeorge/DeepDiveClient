@@ -9,6 +9,6 @@
 public interface MsgInterface {
 	
 	
-	public void HandleMessage();
+	public Message HandleMessage();
 	
 }

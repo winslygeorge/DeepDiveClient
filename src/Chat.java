@@ -47,50 +47,65 @@ public class Chat {
 	public boolean chatSendMessage(Message message) {
 		boolean is = false;
 		try {
-			
-			if(this.getIsPrivate()== false) {
-				
-				MessageSecurity security = new MessageSecurity(user, pass);
-				
-				security.setPublicMode();
-				
-				String smsg = security.encryptData(mess.getMessage());
-				
-				System.out.println(mess.getMessage());
-				
-				o.writeObject(new Message(message.getGroupClient(), message.getType(),message.getFrom(), message.getTo(),smsg, false));
+
+			if(message.getApplicationType().equalsIgnoreCase("app")){
+
+
+				if(this.getIsPrivate()== false) {
+
+					MessageSecurity security = new MessageSecurity(user, pass);
+
+					security.setPublicMode();
+
+					String smsg = security.encryptData(mess.getMessage());
+
+					System.out.println(mess.getMessage());
+
+					o.writeObject(new Message(message.getApplicationType(), message.getGroupClient(), message.getType(),message.getFrom(), message.getTo(),smsg, false));
+					o.flush();
+
+				}else if(this.getIsPrivate()== true) {
+
+					System.out.println(message.getFrom()+" : "+ message.getTo()+ message.getMessage());
+
+					MessageSecurity security = new MessageSecurity(user, pass);
+
+					security.setIsprivate(true);
+
+					String ecns = security.encryptData(message.getMessage());
+
+					System.out.println("kk");
+
+					String st = security.encryptSymmetricKey(message.getTo(), security.getSks());
+
+
+					o.writeObject(new Message(message.getType(),message.getFrom(), message.getTo(), security.signMessage(ecns), ecns , true, st));
+					o.flush();
+
+					System.out.println(message.getTo()+" : " + new Date() + " : "+ message.getMessage());
+
+				}else {
+
+					System.out.println("chat mode not indicated");
+				}
+
+			}else{
+
+				System.out.println("message on web mode : "+  message.getMessage());
+
+				o.writeObject(message);
 				o.flush();
-				
-			}else if(this.getIsPrivate()== true) {
-			
-				System.out.println(message.getFrom()+" : "+ message.getTo()+ message.getMessage());
-				
-				MessageSecurity security = new MessageSecurity(user, pass);
-				
-				security.setIsprivate(true);
-				
-				String ecns = security.encryptData(message.getMessage());
-				
-				System.out.println("kk");
-				
-				String st = security.encryptSymmetricKey(message.getTo(), security.getSks());
-				
-				
-				o.writeObject(new Message(message.getType(),message.getFrom(), message.getTo(), security.signMessage(ecns), ecns , true, st));
-				o.flush();
-				
-				System.out.println(message.getTo()+" : " + new Date() + " : "+ message.getMessage());
-				
-			}else {
-				
-				System.out.println("chat mode not indicated");
+
+
 			}
+			
+
 		
 			
 			is = true;
 		} catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
 		}
 		return is;
 		
@@ -98,7 +113,7 @@ public class Chat {
 	
 	public SecretKey getAsymKey(String p) {
 		
-		GetAccess access = new GetAccess(pass);
+		GetAccess access = new GetAccess(this.user, pass);
 
 		
 		SecretKey sk = access.getAsymmetrickey();
@@ -109,17 +124,17 @@ public class Chat {
 	
 	public void chatPrivateModeInit() {
 		
-		if(this.getIsPrivate()== true) {
+		if(this.getIsPrivate()) {
 
 		try {
-			o.writeObject(new Message("privatechat", mess.getType(), mess.getFrom(), mess.getTo(), ">>requestprivate##", false));
+			o.writeObject(new Message(mess.getApplicationType(),"privatechat", mess.getType(), mess.getFrom(), mess.getTo(), ">>requestprivate##", false));
 			o.flush();
-			o.writeObject(new Message(mess.getFrom(), mess.getTo(), new GetAccess(pass).getAccessCertification("client")));
+			o.writeObject(new Message(mess.getFrom(), mess.getTo(), new GetAccess(this.user, pass).getAccessCertification("client")));
 			o.flush();
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
 		}
 		
 	}}

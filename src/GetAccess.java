@@ -28,10 +28,14 @@ public class GetAccess {
 	private char[] passcode;
 	
 	protected PrivateKey key;
+
+	protected  String user = null;
 	
-	public GetAccess( String userpassd) {
+	public GetAccess( String user,String userpassd) {
 		
 		userpass = userpassd;
+
+		this.user = user;
 		
 		String pcd = userpass+"codd";
 		
@@ -43,7 +47,7 @@ public class GetAccess {
 		try {
 			KeyStore keystore = KeyStore.getInstance("jks");
 			
-			keystore.load(new FileInputStream("confid/pirate.jks"), userpass.toCharArray());
+			keystore.load(new FileInputStream("confid/"+this.user+"/pirate.jks"), userpass.toCharArray());
 			
 		
 			if(args.trim().equalsIgnoreCase("root")) {
@@ -66,7 +70,8 @@ public class GetAccess {
 			
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 		return cert;
 		
@@ -77,13 +82,16 @@ public class GetAccess {
 		try {
 			KeyStore keystore = KeyStore.getInstance("jks");
 			
-			keystore.load(new FileInputStream("confid/pirate.jks"), userpass.toCharArray());
+			keystore.load(new FileInputStream("confid/"+this.user+"/pirate.jks"), userpass.toCharArray());
 			
 			key = (PrivateKey) keystore.getKey("userPrivateKey", this.getCode());
 			
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | UnrecoverableKeyException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+
+			System.err.println(e.getMessage());
+
+
 		}
 		
 			
@@ -102,7 +110,7 @@ public class GetAccess {
 		try {
 			KeyStore keyst = KeyStore.getInstance("jceks");
 			
-			keyst.load(new FileInputStream("confid/pirate.jceks"), userpass.toCharArray());
+			keyst.load(new FileInputStream("confid/"+this.user+"/pirate.jceks"), userpass.toCharArray());
 			
 			KeyStore.ProtectionParameter pparam = new KeyStore.PasswordProtection(userpass.toCharArray());
 			
@@ -111,7 +119,7 @@ public class GetAccess {
 			kss = ent.getSecretKey();
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | UnrecoverableEntryException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
 		}
 		
 		return kss;

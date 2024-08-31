@@ -20,15 +20,12 @@ import java.util.Scanner;
 
 import javax.crypto.SecretKey;
 
-/**
- * 
- */
+import org.json.simple.JSONObject;
 
 /**
  * @author georgos7
- *
  */
-public class DiveClient{
+public class DiveClient  {
 	
 	java.security.cert.X509Certificate cert;
 	
@@ -40,100 +37,166 @@ public class DiveClient{
 	protected ObjectOutputStream out;
 	protected String passwd = null;
 	protected ObjectInputStream in;
+
+	protected String applicationType = "app";
 	
 	protected Queue<Message> msgq = new LinkedList<Message>();
-	public DiveClient(String host, int p, String user, String pass ) {
-		
-		
-		
-		
+
+	protected String receivedMessageString = null;
+	public DiveClient(String applicationType, String host, int p, String user, String pass ) {
+
+		this.applicationType = applicationType;
 		passwd = pass;
 		userName = user;
-		File file = new File("confid");
-				
-		if(!file.exists()) {
-		
-		GetCertUrl validate = new GetCertUrl(host, p, user, pass);
-		
-		System.out.println(validate.getAccessCertification("client").getSubjectDN()+" : certificate created");
-			
-		}
-		
-		
-		GetAccess access = new GetAccess(pass);
-		PublicKey pk = access.getAccessCertification("root").getPublicKey();
-		try {
-			
-			access.getAccessCertification("client").verify(pk);
-			
-			
-			setClient(new Socket("127.0.0.1", 5000));
-			
-			out = new ObjectOutputStream(client.getOutputStream());
-			
-			in = new ObjectInputStream(client.getInputStream());
-			
-			out.writeObject(new Message(user, access.getAccessCertification("client")));
-			
-			out.flush();
 
-				
-			
-			Message ms = (Message)in.readObject();
-			
-			
-			try{
-				
-				
-				ms.getCertificate().verify(pk);
-				
-				
-				
-				if(this.storeImportant(pass, ms.getAsymmetrickey())== true){
-					out.writeInt(1);
-					out.flush();
-					
-					out.writeUTF(user);
-					out.flush();
-					System.out.println("client connected successfully to the server...");
-					
-					System.out.println(client.getInetAddress().getHostAddress()+":"+ client.getLocalPort()+":"+ user);
-				
-					
-				}else {
-					
+		if(this.applicationType.equalsIgnoreCase("app")){
+
+
+			File file = new File("confid/"+this.userName);
+
+			if(!file.exists()) {
+
+				GetCertUrl validate = new GetCertUrl(host, p, user, pass);
+
+				System.out.println(validate.getAccessCertification("client").getSubjectDN()+" : certificate created");
+
+			}
+
+
+			GetAccess access = new GetAccess(user, pass);
+			PublicKey pk = access.getAccessCertification("root").getPublicKey();
+			try {
+
+				access.getAccessCertification("client").verify(pk);
+
+
+				setClient(new Socket("127.0.0.1", 5000));
+
+				out = new ObjectOutputStream(client.getOutputStream());
+
+				in = new ObjectInputStream(client.getInputStream());
+
+				out.writeObject(new Message(user, access.getAccessCertification("client")));
+
+				out.flush();
+
+
+
+				Message ms = (Message)in.readObject();
+
+
+				try{
+
+
+					ms.getCertificate().verify(pk);
+
+
+
+					if(this.storeImportant(pass, ms.getAsymmetrickey())){
+						out.writeInt(1);
+						out.flush();
+
+						out.writeUTF(user);
+						out.flush();
+						System.out.println("client connected successfully to the server...");
+
+						System.out.println(client.getInetAddress().getHostAddress()+":"+ client.getLocalPort()+":"+ user);
+
+
+					}else {
+
+						out.writeInt(0);
+						out.flush();
+						System.out.println("Client didn't get access code right..");
+					}
+
+
+
+				}catch(Exception e) {
+
 					out.writeInt(0);
 					out.flush();
-					System.out.println("Client didn't get access code right..");
+					System.err.println(e.getMessage());
+
+
+					in.close();
+					out.close();
+					client.close();
 				}
-				
-		
-				
-			}catch(Exception e) {
-				
-				out.writeInt(0);
-				out.flush();
-				e.printStackTrace();
-				
-				in.close();
-				out.close();
-				client.close();
+
+
+
+			} catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException | NoSuchProviderException
+					 | SignatureException | IOException | ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				System.err.println(e.getMessage());
+
+
 			}
-		
-			
-			
-		} catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException | NoSuchProviderException
-				| SignatureException | IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+
+
+
+		}else{
+
+            try {
+                setClient(new Socket("127.0.0.1", 5000));
+
+				out = new ObjectOutputStream(client.getOutputStream());
+
+				in = new ObjectInputStream(client.getInputStream());
+
+				out.writeObject(new Message("webclientconnecting", "client requesting connection"));
+
+				out.flush();
+
+//				out.writeObject(new Message(this.applicationType,"connection", "text", user, user, "connection accepted", false));
+//
+//				out.flush();
+
+				out.writeInt(1);
+				out.flush();
+
+				out.writeUTF(user);
+				out.flush();
+				System.out.println("client connected successfully to the server...");
+
+				System.out.println(client.getInetAddress().getHostAddress()+":"+ client.getLocalPort()+":"+ user);
+
+			} catch (IOException e) {
+
+                try {
+                    out.writeInt(0);
+					out.flush();
+
+				} catch (IOException ex) {
+					System.err.println(ex.getMessage());
+                }
+                System.err.println(e.getMessage());
+
+                try {
+                    out.close();
+					in.close();
+					client.close();
+				} catch (IOException ex) {
+
+					System.err.println(e.getMessage());
+
+
+				}
+            }
+
+
+
 		}
-		
+
+
 		
 		
 
 	}
 	
-	public void runClient() {
+	@SuppressWarnings({ "unchecked", "deprecation" })
+	public void runClient(MessageHandlerCallback webcallback) {
 		
 		try {
 			
@@ -147,7 +210,7 @@ public class DiveClient{
 					
 					Message mx = null;
 					
-					if(msgq.size() > 0) {
+					if(!msgq.isEmpty()) {
 						
 						mx = msgq.remove();
 					}
@@ -158,10 +221,10 @@ public class DiveClient{
 					}else {
 						
 						if(!mx.getType().equalsIgnoreCase("token")) {
-							
-							out.writeObject(new Message("privatechat", "token", this.userName, mx.getFrom(), "delivered", false));
-							out.flush();
-							
+
+//							out.writeObject(new Message(this.applicationType,"privatechat", "token", this.userName, mx.getFrom(), "delivered", false));
+//							out.flush();
+
 						}
 						
 					}
@@ -171,13 +234,13 @@ public class DiveClient{
 					System.out.println(str.getCertificate()+" : "+str.getPrivateCode()+ " : "+str.getType());
 					
 
-					if( str.getPrivateCode() == true) {
+					if(str.getPrivateCode()) {
 						
 						System.out.println("Private chat request was denied bi "+ str.getFrom());
-					}else if(str.getCertificate()!=null) {
+					}else if(str.getCertificate()!=null && this.applicationType.equalsIgnoreCase("app")) {
 						
 						
-						File f = new File("confid/piratefriend.jks");
+						File f = new File("confid/"+this.userName+"/piratefriend.jks");
 				
 						
 						if(f.createNewFile()) {
@@ -210,12 +273,12 @@ public class DiveClient{
 						
 						System.out.print(skk.containsAlias(m));
 						
-						if(skk.containsAlias(m) != true) {
+						if(!skk.containsAlias(m)) {
 					
 							
 							
 
-							if(this.storeImportant(str.getFrom(), passwd, str.getCertificate()) == true) {
+							if(this.storeImportant(str.getFrom(), passwd, str.getCertificate())) {
 								System.out.println(str.getFrom());
 							
 								System.out.println("Private chat Initiated.\n");
@@ -229,7 +292,7 @@ public class DiveClient{
 							System.out.println("Private chat is on..");
 						}
 					
-				}else if(str.getMessage().trim().equals(">>requestprivate##")) {
+				}else if(str.getMessage().trim().equals(">>requestprivate##") && this.applicationType.equalsIgnoreCase("app")) {
 						
 						System.out.println(str.getFrom()+" : "+ "is requesting a private chat. Enter y/n..?");
 						
@@ -238,7 +301,7 @@ public class DiveClient{
 						if(scan.nextLine().trim().equalsIgnoreCase("y")) {
 						
 							scan.close();
-							out.writeObject(new Message(str.getTo(), str.getFrom(), new GetAccess(passwd).getAccessCertification("client") ));
+							out.writeObject(new Message(str.getTo(), str.getFrom(), new GetAccess(this.userName,passwd).getAccessCertification("client") ));
 							out.flush();
 							
 							System.out.println("...initializing...");
@@ -253,8 +316,35 @@ public class DiveClient{
 					}else {
 						
 
-						new MessageHandler(this.userName,this.passwd,str, out).HandleMessage();
-						System.out.println(str.getMessage());
+						Message finalMesg = new MessageHandler(this.applicationType,this.userName,this.passwd,str, out).HandleMessage();
+
+
+						webcallback.onMessageReceived(finalMesg);
+
+
+
+						JSONObject fmsgObj = new JSONObject();
+						
+						fmsgObj.put("from", finalMesg.getFrom());
+						fmsgObj.put("to", finalMesg.getTo());
+						fmsgObj.put("message", finalMesg.getMessage());
+						fmsgObj.put("time", finalMesg.getCurrentTime().toLocaleString());
+						
+						try {
+
+							new DeepDiveApi().sendReceivedMsg(finalMesg.getMessage());
+							receivedMessageString = fmsgObj.toJSONString();
+
+
+						}catch(Exception e) {
+
+							System.err.println(e.getMessage());
+
+						}
+						
+						
+						
+						
 					}
 					
 						
@@ -268,24 +358,14 @@ public class DiveClient{
 					in.close();
 					out.close();
 					client.close();
-			} catch (IOException e) {
+			} catch (IOException | ClassNotFoundException | KeyStoreException | NoSuchAlgorithmException |
+                     CertificateException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (KeyStoreException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NoSuchAlgorithmException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (CertificateException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			System.err.println(e.getMessage());
 
-	}
+		}
+
+    }
 	
 
 
@@ -298,11 +378,6 @@ public class DiveClient{
 	public void setClient(Socket client) {
 		DiveClient.client = client;
 	}
-	
-	public Socket readData() {
-				
-			return client;
-		}
 	
 	public boolean storeImportant(String friendName,String p, Certificate cert) {
 		boolean is = false;
@@ -325,7 +400,8 @@ public class DiveClient{
 			
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 		return is;
 	}
@@ -344,12 +420,13 @@ public class DiveClient{
 			KeyStore.SecretKeyEntry sentry = new KeyStore.SecretKeyEntry(ky);
 			k.setEntry("asymmetrickey", sentry, pparam);
 			
-			k.store(new FileOutputStream("confid/pirate.jceks"), p.toCharArray() );
+			k.store(new FileOutputStream("confid/"+this.userName+"/pirate.jceks"), p.toCharArray() );
 			
 			is = true;
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 		
 		
@@ -360,10 +437,10 @@ public void Chat(Message message) {
 	
 	Chat chat = new Chat(this.userName, this.passwd, this.out, message, message.getisPrivate() );
 	
-	if(message.getisPrivate() == true) {
+	if(message.getisPrivate()) {
 		
 		try {
-			File f = new File("confid/piratefriend.jks");
+			File f = new File("confid/"+this.userName+"/piratefriend.jks");
 			
 			
 			if(f.createNewFile()) {
@@ -386,7 +463,7 @@ public void Chat(Message message) {
 			
 			KeyStore skk = KeyStore.getInstance("jks");
 			
-			skk.load(new FileInputStream("confid/piratefriend.jks"), passwd.toCharArray());
+			skk.load(new FileInputStream("confid/"+this.userName+"/piratefriend.jks"), passwd.toCharArray());
 			
 			String m = ">"+message.getTo();
 			
@@ -424,7 +501,8 @@ public void Chat(Message message) {
 							Thread.sleep(300);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
-							e.printStackTrace();
+							System.err.println(e.getMessage());
+
 						}
 						
 						chat.chatSendMessage(message);
@@ -442,16 +520,15 @@ public void Chat(Message message) {
 				
 				
 			}
-		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException |
+                 InterruptedException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
-		
-		
-	}else if(message.getisPrivate() == false) {
+
+
+    }else if(!message.getisPrivate()) {
 		
 		chat.chatSendMessage(message);
 		
@@ -473,10 +550,33 @@ public boolean CreatGroup()  {
 		is = true;
 	} catch (IOException e) {
 		// TODO Auto-generated catch block
-		e.printStackTrace();
+		System.err.println(e.getMessage());
+
+
 	}
 	
 	
 	return is;
 }
+
+
+	@FunctionalInterface
+	public interface MessageHandlerCallback {
+		void onMessageReceived(Message message);
+	}
+
+	public void closeClient (){
+
+		try{
+
+			if(this.getClient().isConnected()){
+				this.getClient().close();
+
+			}
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
+
+		}
+    }
+
 }

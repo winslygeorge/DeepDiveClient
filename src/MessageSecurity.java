@@ -75,9 +75,9 @@ public class MessageSecurity {
 			//ProtectionParameter pparam = new  KeyStore.PasswordProtection("passwd".toCharArray());
 			KeyStore keystore = KeyStore.getInstance("jks");
 			
-			keystore.load(new FileInputStream("confid/pirate.jks"), passwd.toCharArray());
+			keystore.load(new FileInputStream("confid/"+this.u+"/pirate.jks"), passwd.toCharArray());
 		
-		SecretKey  keysp =  new GetAccess(passwd).getAsymmetrickey();
+		SecretKey  keysp =  new GetAccess(this.u, passwd).getAsymmetrickey();
 		
 		setSecretekey(keysp);
 		
@@ -155,11 +155,11 @@ public class MessageSecurity {
 			String s = new String(h.array(), StandardCharsets.UTF_16);
 			
 			return s;
-			}else if( isIsprivate()== true) {
+			}else if(isIsprivate()) {
 			
 			System.out.println("decryption is on private mode");
 			
-			if(this.verifyMessage(enc, msg, this.sender) == true) {
+			if(this.verifyMessage(enc, msg, this.sender)) {
 				
 				System.out.println("msg was verified");
 				
@@ -205,7 +205,7 @@ public class MessageSecurity {
 		byte [] signature = null;
 		try {
 			Signature sign = Signature.getInstance("SHA256WithRSA");
-			GetAccess access = new GetAccess(passwd);
+			GetAccess access = new GetAccess(this.u, passwd);
 			
 			
 			PrivateKey pk = access.getAccessKey();
@@ -258,7 +258,8 @@ public class MessageSecurity {
 			System.out.println(verified);
 		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | KeyStoreException | CertificateException | IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 	
 	
@@ -308,13 +309,16 @@ public class MessageSecurity {
 			
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 		try {
-			encodedKey =  Base64.getEncoder().encodeToString(cip.doFinal());
+            assert cip != null;
+            encodedKey =  Base64.getEncoder().encodeToString(cip.doFinal());
 		} catch (IllegalBlockSizeException | BadPaddingException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 		
 		return encodedKey;
@@ -329,7 +333,7 @@ public class MessageSecurity {
 			
 			
 			
-			GetAccess access = new GetAccess(passwd);
+			GetAccess access = new GetAccess(this.u, passwd);
 			
 			
 			
@@ -341,7 +345,7 @@ public class MessageSecurity {
 			speckey = (SecretKey)new SecretKeySpec(piper.doFinal(), "AES");
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
 		}
 	
 		
@@ -381,7 +385,8 @@ public class MessageSecurity {
 			System.out.println("secrete key generated");
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 System.out.println("key successful" + keysecret);
 	return keysecret;	
@@ -414,7 +419,8 @@ public  ByteBuffer encrypt(ByteBuffer clear, SecretKey key){
 			
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | ShortBufferException | IllegalBlockSizeException | BadPaddingException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 		
 		
@@ -445,25 +451,12 @@ public ByteBuffer decrypt(ByteBuffer g2, SecretKey k) {
 		 alldec= (ByteBuffer) g2.rewind();
 	
 		
-	} catch (NoSuchAlgorithmException e) {
+	} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | ShortBufferException |
+             IllegalBlockSizeException | BadPaddingException e) {
 		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (NoSuchPaddingException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (InvalidKeyException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (ShortBufferException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (IllegalBlockSizeException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (BadPaddingException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
+		System.err.println(e.getMessage());
+
 	}
-	return alldec;
+    return alldec;
 }
 }

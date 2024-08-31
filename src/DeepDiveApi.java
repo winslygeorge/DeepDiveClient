@@ -166,6 +166,29 @@ public JSONObject getGroupRooms(String st){
 		return clients;
 				
 	}
+
+	public JSONObject sendReceivedMsg(String st){
+
+		System.out.println("About to send message");
+
+		JSONObject clients = null;
+
+		try {
+			URL url = new URL("http://localhost:3040/getReceivedMessage?message="+st);
+
+			HttpURLConnection ht = this.GetHeader(url);
+
+			clients = this.handleResponse(ht);
+			System.out.println("Msg sets");
+
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return clients;
+
+	}
 	
 
 public JSONObject getPrivateGroupRooms(String st, String gt){

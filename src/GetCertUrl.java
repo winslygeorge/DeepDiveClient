@@ -35,6 +35,8 @@ public class GetCertUrl {
 	protected static File file = null;
 	protected String userpass = null;
 	protected X509Certificate cert = null;
+
+	protected String user = null;
 	
 	private static char [] passcode;
 	
@@ -44,11 +46,12 @@ public GetCertUrl (String hostname, int port, String user, String passwd) {
 		// TODO Auto-generated method stub
 		
 	userpass = passwd;
+	this.user = user;
 		try {
 			
 			Socket client = new Socket(hostname, port);
 			
-			System.out.println("conneced to cert giver");
+			System.out.println("connected to cert giver");
 			ObjectOutputStream  out = new ObjectOutputStream(client.getOutputStream());
 			
 			ObjectInputStream  in = new ObjectInputStream(client.getInputStream());
@@ -59,10 +62,10 @@ public GetCertUrl (String hostname, int port, String user, String passwd) {
 			
 			KeyPair key = keygen.generateKeyPair();
 			
-			file = new File("confid");
+			file = new File("confid/"+this.user);
 			if(!file.exists()) {
 
-				file.mkdir();
+				file.mkdirs();
 			
 				System.out.println("directory created");
 				
@@ -74,30 +77,22 @@ public GetCertUrl (String hostname, int port, String user, String passwd) {
 				out.flush();
 				System.out.println("cert to sign sent");
 				Cert ct = (Cert)in.readObject();
-		System.out.println("Access way provided");			
-			System.out.println(store(passwd, key.getPrivate(), ct.getRct(), ct.getCert()));
+				System.out.println("Access way provided");
+			System.out.println(store(this.user,passwd, key.getPrivate(), ct.getRct(), ct.getCert()));
 			
 			
 			in.close();
 			out.close();
 			client.close();
 
-		} catch (MalformedURLException e) {
+		} catch (IOException | NoSuchAlgorithmException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.err.println(e.getMessage());
+
 		}
 
-	}
-public static boolean store(String userpasswd, PrivateKey key,X509Certificate certificate, X509Certificate certificate2) {
+}
+public static boolean store(String username,String userpasswd, PrivateKey key,X509Certificate certificate, X509Certificate certificate2) {
 	
 	boolean isconfigured = false;
 	
@@ -113,7 +108,7 @@ public static boolean store(String userpasswd, PrivateKey key,X509Certificate ce
 		passcode = (userpasswd+"codd").toCharArray();
 		keystore.setKeyEntry("userPrivateKey", key , passcode, chain );
 		
-		File file = new File("confid/pirate.jks");
+		File file = new File("confid/"+username+"/pirate.jks");
 		
 		if(file.getFreeSpace()!= -1|| file.getFreeSpace()!=0) {
 		
@@ -121,7 +116,7 @@ public static boolean store(String userpasswd, PrivateKey key,X509Certificate ce
 		
 		}else {
 			
-			File fl = new File("confid/pirate1.jks");
+			File fl = new File("confid/"+username+"/pirate1.jks");
 			
 
 			if(file.getFreeSpace()!= -1|| file.getFreeSpace()!=0) {
@@ -142,7 +137,9 @@ public static boolean store(String userpasswd, PrivateKey key,X509Certificate ce
 		
 	} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 		// TODO Auto-generated catch block
-		e.printStackTrace();
+		System.err.println(e.getMessage());
+
+
 	}
 	
 	
@@ -156,7 +153,7 @@ public X509Certificate getAccessCertification(String args) {
 	try {
 		KeyStore keystore = KeyStore.getInstance("jks");
 		
-		keystore.load(new FileInputStream("confid/pirate.jks"), userpass.toCharArray());
+		keystore.load(new FileInputStream("confid/"+this.user+"/pirate.jks"), userpass.toCharArray());
 		
 	
 		if(args.matches("root")) {
@@ -174,7 +171,8 @@ public X509Certificate getAccessCertification(String args) {
 			
 	} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 		// TODO Auto-generated catch block
-		e.printStackTrace();
+		System.err.println(e.getMessage());
+
 	}
 	return cert;
 	
@@ -185,13 +183,14 @@ protected PrivateKey getAccessKey() {
 	try {
 		KeyStore keystore = KeyStore.getInstance("jks");
 		
-		keystore.load(new FileInputStream("confid/pirate.jks"), userpass.toCharArray());
+		keystore.load(new FileInputStream("confid/"+this.user+"/pirate.jks"), userpass.toCharArray());
 		
 		key = (PrivateKey) keystore.getKey("userPrivateKey", this.getCode());
 		
 	} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException | UnrecoverableKeyException e) {
 		// TODO Auto-generated catch block
-		e.printStackTrace();
+		System.err.println(e.getMessage());
+
 	}
 	
 		

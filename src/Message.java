@@ -49,16 +49,19 @@ public class Message implements Serializable{
 	private String keyString;
 
 	private String groupClient;
-	
+
+	private String applicationType;
+
 	public Message(String type, String msg) {
 		
 		this.type = type;
 		this.message = msg;
 	}
 	
-	public Message(String groupclient, String type,String fro, String to, String msg, boolean b) {
+	public Message(String applicationType,String groupclient, String type,String fro, String to, String msg, boolean b) {
 		
 		this.from = fro;
+		this.applicationType = applicationType;
 		this.to = to;
 		this.message = msg;
 		this.currenttime = new Date();
@@ -195,8 +198,21 @@ public class Message implements Serializable{
 		return groupClient;
 	}
 
+	public String getApplicationType() {
+		return this.applicationType;
+	}
+
+
 	public void setGroupClient(String groupClient) {
 		this.groupClient = groupClient;
 	}
+
+	public void setMessage(String smsg) {
+		// TODO Auto-generated method stub
+		
+		this.message = smsg;
+		
+	}
+
 }
 

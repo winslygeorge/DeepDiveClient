@@ -1,3 +1,6 @@
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,12 +19,15 @@ public class App{
 	/**
 	 * @param args
 	 * @throws  
-	 * @throws UnknownHostException 
+	 * @throws
 	 */
 	
 	static Scanner scan= null;
 	protected static String user;
 	static Scanner scanner = new Scanner(System.in);
+
+	private Queue<Message> msgq = new LinkedList<>();
+	private MessageHandler messageHandler;
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
@@ -34,7 +40,7 @@ System.out.println("Enter Password : ");
 
 String passwd = scanner.nextLine();
 	
-	DiveClient client = new DiveClient("localhost", 3030,username, passwd );
+	DiveClient client = new DiveClient("app", "localhost", 3030,username, passwd );
 	
 	ExecutorService exe = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
 	
@@ -42,7 +48,7 @@ String passwd = scanner.nextLine();
 	
 	exe.submit(()->{
 		
-		client.runClient();
+		client.runClient((message -> System.out.println(message.getMessage())));
 		
 	} );
 
@@ -52,6 +58,10 @@ exe.submit(()->{
 		
 	if(client.getClient().isConnected()) {
 		while(true) {
+
+			System.out.println("ApplicationType : ");
+
+			String applicationType = scanner.nextLine();
 			
 			
 			System.out.println("Type : ");
@@ -65,7 +75,7 @@ exe.submit(()->{
 			
 			String msg = scanner.nextLine();
 			
-			client.Chat(new Message(typ, "text", username, friend, msg,false));
+			client.Chat(new Message(applicationType,typ, "text", username, friend, msg,false));
 		}
 		
 
@@ -73,6 +83,9 @@ exe.submit(()->{
 });
 
 	}
+
+
+
 	
 	
 

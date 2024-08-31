@@ -16,9 +16,10 @@ public class MessageHandler implements MsgInterface{
 	protected String u;
 	protected String p;
 	protected ObjectOutputStream out;
+	protected String applicationType ;
 
-	public MessageHandler(String user, String passwd,Message str, ObjectOutputStream out) {
-		
+	public MessageHandler(String applicationType,String user, String passwd,Message str, ObjectOutputStream out) {
+		this.applicationType = applicationType;
 		this.p = passwd;
 		this.u = user;
 		this.out = out;
@@ -31,14 +32,14 @@ public class MessageHandler implements MsgInterface{
 	}
 
 	@Override
-	public void HandleMessage() {
+	public Message HandleMessage() {
 		// TODO Auto-generated method stub
 		
 		
 		
 		Message msg = this.message;
 		
-		if(msg.getisPrivate()==false) {
+		if(!msg.getisPrivate()) {
 			
 			if(msg.getType().matches("token")) {
 				
@@ -48,18 +49,36 @@ public class MessageHandler implements MsgInterface{
 			}else {
 				
 
-				MessageSecurity security = new MessageSecurity(u, p);
-				
-				security.setPublicMode();
-				
-				String smsg = security.decryptData(msg.getMessage(), null);
-						
-				System.out.println(msg.getCurrentTime()+" : "+msg.getFrom()+" : "+ smsg);
+				if(this.applicationType.equalsIgnoreCase("app")){
+
+					MessageSecurity security = new MessageSecurity(u, p);
+
+					security.setPublicMode();
+
+					String smsg = security.decryptData(msg.getMessage(), null);
+
+					msg.setMessage(smsg);
+
+					System.out.println(msg.getCurrentTime()+" : "+msg.getFrom()+" : "+ smsg);
+
+				}else{
+
+//					MessageSecurity security = new MessageSecurity(u, p);
+
+//					security.setPublicMode();
+
+//					String smsg = security.decryptData(msg.getMessage(), null);
+
+//					msg.setMessage(smsg);
+
+					System.out.println(msg.getCurrentTime()+" : "+msg.getFrom()+" : "+ msg.getMessage());
+				}
+
 				
 			}
 			
 			
-		}else if(msg.getisPrivate()== true) {
+		}else if(msg.getisPrivate() && this.applicationType.equalsIgnoreCase("app")) {
 			
 			MessageSecurity security = new MessageSecurity(msg.getFrom(),u, p, msg.getKeyString());
 			
@@ -72,15 +91,15 @@ public class MessageHandler implements MsgInterface{
 			
 		}else {
 			
-			System.out.println("chat mode was not indicated");
+			System.err.println("chat mode was not indicated");
 		}
 
-		
+		return msg;
 	}
 	
 	public void  reply(String ms, Message pevMs) {
 		
-		Chat chat = new Chat(u, p,out,new Message("privatechat", "text", pevMs.to, pevMs.from, ms, false ), false);
+		Chat chat = new Chat(u, p,out,new Message(this.applicationType,"privatechat", "text", pevMs.to, pevMs.from, ms, false ), false);
 	}
 	
 
